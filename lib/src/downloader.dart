@@ -101,10 +101,13 @@ class FlutterDownloader {
     bool requiresStorageNotLow = true,
     bool saveInPublicStorage = false,
     bool allowCellular = true,
+    bool ignoreDirectoryExistAssert = false,
     int timeout = 15000,
   }) async {
     assert(_initialized, 'plugin flutter_downloader is not initialized');
-    assert(Directory(savedDir).existsSync(), 'savedDir does not exist');
+    if (!ignoreDirectoryExistAssert) {
+      assert(Directory(savedDir).existsSync(), 'savedDir does not exist');
+    }
 
     try {
       final taskId = await _channel.invokeMethod<String>('enqueue', {

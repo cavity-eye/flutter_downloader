@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import androidx.documentfile.provider.DocumentFile
 import android.content.ContentValues
 import android.content.Context
 import android.content.SharedPreferences
@@ -390,8 +391,9 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
                         outputStream = context.contentResolver.openOutputStream(uri, "w")
                     } else {
                         val file = createFileInAppSpecificDir(actualFilename!!, savedDir)
-                        savedFilePath = file!!.path
-                        outputStream = FileOutputStream(file, false)
+                        savedFilePath = file!!.uri.path
+
+                        outputStream = applicationContext.contentResolver.openOutputStream(file.uri)
                     }
                 }
                 var count = downloadedBytes
@@ -497,15 +499,12 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
     /**
      * Create a file using java.io API
      */
-    private fun createFileInAppSpecificDir(filename: String, savedDir: String): File? {
-        val newFile = File(savedDir, filename)
+    private fun createFileInAppSpecificDir(filename: String, savedDir: String): DocumentFile? {
+        val dirURI: Uri = Uri.parse(savedDir)
+        val outputFolder: DocumentFile? = DocumentFile.fromTreeUri(applicationContext, dirURI)
         try {
-            val rs: Boolean = newFile.createNewFile()
-            if (rs) {
-                return newFile
-            } else {
-                logError("It looks like you are trying to save file in public storage but not setting 'saveInPublicStorage' to 'true'")
-            }
+            val newFile = outputFolder!!.createFile("txt", filename);
+            return newFile
         } catch (e: IOException) {
             e.printStackTrace()
             logError("Create a file using java.io API failed ")
